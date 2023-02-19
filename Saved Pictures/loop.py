@@ -1,17 +1,18 @@
 import pygame
 import constates
 import os
+import math
 
 
 class Game:
     def __init__(self):
         pygame.init()
         pygame.mixer.init()
-        self.tela = pygame.display.set_mode((constates.x, constates.y))
+        self.tela = pygame.display.set_mode((constates.LAR, constates.ALT))
         pygame.display.set_caption(constates.Title)
         self.timer = pygame.time.Clock()
         self.rodando = True
-        self.font = pygame.font.match_font(constates.FONTE)
+        self.font = pygame.font.match_font('Grand9K Pixel.ttf')
         self.carregar_arquivos()
 
     def novo_jogo(self):
@@ -33,7 +34,7 @@ class Game:
             if event.type == pygame.QUIT:
                 if self.jogando:
                     self.jogando = False
-                self.esta_rodando = False
+                self.rodando = False
 
     def atualizar_sprites(self):
         self.todas_as_sprites.update()
@@ -50,7 +51,7 @@ class Game:
         self.diretorio_audio = os.path.join(os.getcwd(), "audio")
         self.spritesheet = os.path.join(diretorio_imagens, constates.SPRITESHEETS)
         logo_jogo_start = os.path.join(diretorio_imagens, constates.LOGOJOGO)
-        self.logo_jogo_start = pygame.image.load(logo_jogo_start).convert()
+        self.logo_jogo_start = pygame.image.load(logo_jogo_start)
 
     def mostrar_texto(self, texto, tamanho, cor, x, y):
 
@@ -70,13 +71,11 @@ class Game:
         pygame.mixer.music.load(os.path.join(self.diretorio_audio, constates.ABERTURA))
         pygame.mixer.music.play()
 
-        self.mostrar_start_logo(constates.x / 2, 20)
-        self.mostrar_texto('Pressione qualquer tecla para jogar', 32, constates.BRANCO, constates.x/2, 320)
-
+        self.mostrar_start_logo(constates.LAR / 2, 100)
+        self.mostrar_texto('Pressione qualquer tecla para jogar', 30, constates.BRANCO, constates.LAR - 500, 500)
         pygame.display.flip()
         self.esperar_jogador()
-
-        self.mostrar_texto('Desenvolvido por Machado Lins Productions®', 19, constates.BRANCO, constates.x / 2, 570)
+        self.mostrar_texto('Desenvolvido por Machado Lins Productions®', 19, constates.BRANCO, constates.LAR - 500, 300)
 
     def esperar_jogador(self):
         esperando = True
@@ -85,21 +84,65 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     esperando = False
-                    self.esta_rodando = False
+                    self.rodando = False
                 if event.type == pygame.KEYUP:
                     esperando = False
                     pygame.mixer.music.stop()
                     pygame.mixer.Sound(os.path.join(self.diretorio_audio, )).play()
+                if event.type == pygame.KEYUP:
+                    esperando = False
+                    self.novo_jogo()
 
     def mostrar_tela_game_over(self):
         pass
 
 
+class Player:
+    def __init__(self, x, y, radius, angle, distance):
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.angle = angle
+        self.speed = 5
+        self.distance = distance
+
+    def update(self, direction):
+        if direction == "right":
+            self.angle += self.speed
+        elif direction == "left":
+            self.angle -= self.speed
+        elif direction == "forward":
+            self.distance += self.speed
+        elif direction == "backward":
+            self.distance -= self.speed
+
+        self.distance = max(-180, self.distance)
+
+        self.x = x + math.cos(math.radians(self.angle)) * (self.radius + self.distance)
+        self.y = y + math.sin(math.radians(self.angle)) * (self.radius + self.distance)
+
+    def draw(self, screen):
+        pygame.draw.circle(screen, (255, 255, 255), (int(self.x), int(self.y)), 20)
+
+
+x, y = 250, 250
+radius = 200
+player = Player(x, y, radius, 0, 0)
+
 g = Game()
 g.mostrar_tela_start()
 
 while g.rodando:
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_RIGHT]:
+        player.update("right")
+    elif keys[pygame.K_LEFT]:
+        player.update("left")
+    elif keys[pygame.K_UP]:
+        player.update("forward")
+    elif keys[pygame.K_DOWN]:
+        player.update("backward")
+
     g.novo_jogo()
     g.mostrar_tela_game_over()
-
-
